@@ -13,31 +13,5 @@ case class Country(
     population: Int
 )
 
-
-trait MyJsonProtocol extends DefaultJsonProtocol {
-  implicit val countyFormat = jsonFormat5(Country)
-}
-// object MyJsonProtocol extends DefaultJsonProtocol {
-//   implicit object counryJsonFormat extends RootJsonFormat[Country] {
-
-//     def read(value: JsValue) = {
-//       value.asJsObject.getFields(
-//         "name",
-//         "alpha3Code",
-//         "subregion",
-//         "capital",
-//         "population"
-//       ) match {
-//         case Seq(
-//             JsString(name),
-//             JsString(alpha3Code),
-//             JsString(subregion),
-//             JsString(capital),
-//             JsNumber(population)
-//             ) =>
-//           new Country(name, alpha3Code, subregion, capital, population.toInt)
-//         case _ => throw new DeserializationException("")
-//       }
-//     }
-//   }
-// }
+//http://www.danieluzunu.com/2015/10/04/reflecting-the-values-of-class-members-in-scala/
+//This is need in order to sort the csv by

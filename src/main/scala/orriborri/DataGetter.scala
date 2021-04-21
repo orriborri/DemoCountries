@@ -16,22 +16,24 @@ import akka.stream.scaladsl.Flow
 import akka.NotUsed
 import play.api.libs.json.Json
 import spray.json._
-import spray.json._
 import DefaultJsonProtocol._
 import com.fasterxml.jackson.annotation.JsonValue
-import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.http.scaladsl.model.Uri
 import akka.util.ByteString
 import akka.stream.scaladsl.JsonFraming
+import scala.collection.immutable
+import java.nio.file.Paths
+import akka.stream.scaladsl.FileIO
 
 case class Country(
     name: String,
     alpha3Code: String,
     subregion: String,
     capital: String,
-    population: Int
+    population: Int,
+    flag: String
 )
 
 class DataGetter()(
@@ -41,12 +43,11 @@ class DataGetter()(
 
   def getCountries(
       url: String
-  ) {
-    implicit val profileFormat = jsonFormat5(Country)
+  ): Future[Seq[Country]] = {
+    implicit val profileFormat = jsonFormat6(Country)
 
     val logger = LoggerFactory.getLogger(getClass.getSimpleName)
     //https://github.com/spray/spray-json
-    val parallelism = 10
     val httpClient = Http().outgoingConnection("restcountries.eu")
 
     val response = Source
@@ -66,16 +67,23 @@ class DataGetter()(
         s.utf8String.parseJson.convertTo[Country]
       })
     }
-
-    val countryToSeq: Flow[Country, String, NotUsed] =
-      Flow[Country].map(_.toString())
+    // val downloadFlags: Flow[Country, (Country, ByteString), NotUsed] = {
+    //   Flow[Country].map(c => {
+    //     (c, Http().ClientLayer.Get(c.flag))
+    //   })
+    // }
 
     response
       .via(httpClient)
       .via(resToString)
       .via(jsonFraming)
       .via(stringToContry)
-      .runWith(Sink.foreach(println(_)))
+      .runWith(Sink.seq[Country])
+
   }
+
+  // }.via(countryToSeq)
+  //   .via(csvFormat)
+  //   .runWith(FileIO.toPath(file))
 
 }
