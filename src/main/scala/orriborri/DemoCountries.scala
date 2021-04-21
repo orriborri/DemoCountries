@@ -48,7 +48,11 @@ object DemoCountries extends App {
     case Failure(exception) => exception
   }
 
-  fl.foreach(f => Await.result(f, Duration.Inf))
+  val f2 = Future(fl.foreach(f => Await.result(f, Duration.Inf)))
+  f2 onComplete {
+    case Success(_)         => logger.info("All done!")
+    case Failure(exception) => exception
+  }
   System.exit(0)
 }
 

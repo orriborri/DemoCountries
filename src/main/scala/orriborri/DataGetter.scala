@@ -26,15 +26,9 @@ import akka.stream.scaladsl.JsonFraming
 import scala.collection.immutable
 import java.nio.file.Paths
 import akka.stream.scaladsl.FileIO
-
-case class Country(
-    name: String,
-    alpha3Code: String,
-    subregion: String,
-    capital: String,
-    population: Int,
-    flag: String
-)
+import akka.stream.OverflowStrategy.fail
+import akka.stream.OverflowStrategy
+import orriborri.Model.Country
 
 class DataGetter()(
     implicit val system: ActorSystem[Any],
@@ -63,15 +57,12 @@ class DataGetter()(
     }
 
     val stringToContry: Flow[ByteString, Country, NotUsed] = {
-      Flow[ByteString].map(s => {
-        s.utf8String.parseJson.convertTo[Country]
-      })
+      Flow[ByteString]
+        .map(s => {
+          s.utf8String.parseJson.convertTo[Country]
+        })
+
     }
-    // val downloadFlags: Flow[Country, (Country, ByteString), NotUsed] = {
-    //   Flow[Country].map(c => {
-    //     (c, Http().ClientLayer.Get(c.flag))
-    //   })
-    // }
 
     response
       .via(httpClient)
@@ -79,7 +70,6 @@ class DataGetter()(
       .via(jsonFraming)
       .via(stringToContry)
       .runWith(Sink.seq[Country])
-
   }
 
   // }.via(countryToSeq)

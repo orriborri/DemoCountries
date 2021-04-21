@@ -12,6 +12,7 @@ import akka.stream.scaladsl.FileIO
 import akka.stream.ActorMaterializer
 import scala.concurrent.ExecutionContextExecutor
 import akka.actor.typed.ActorSystem
+import orriborri.Model._
 
 class CsvWriter()(
     implicit val system: ActorSystem[Any],
