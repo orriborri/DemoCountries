@@ -26,6 +26,7 @@ class CsvWriter()(
       Seq(
         c.name,
         c.alpha3Code,
+        c.region,
         c.subregion,
         c.capital,
         c.population.toString()

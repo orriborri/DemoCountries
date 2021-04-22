@@ -4,6 +4,7 @@ package orriborri.Model
 case class Country(
     name: String,
     alpha3Code: String,
+    region: String,
     subregion: String,
     capital: String,
     population: Int,

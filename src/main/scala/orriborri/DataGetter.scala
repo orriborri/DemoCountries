@@ -28,20 +28,22 @@ import java.nio.file.Paths
 import akka.stream.scaladsl.FileIO
 import akka.stream.OverflowStrategy.fail
 import akka.stream.OverflowStrategy
+import scala.collection.mutable.Map
 import orriborri.Model.Country
 
 class DataGetter()(
     implicit val system: ActorSystem[Any],
     implicit val ec: ExecutionContextExecutor
 ) {
-
+  var statistic: Map[String, Int] = Map()
+  def getStatistic(): Map[String, Int] = statistic
   def getCountries(
       url: String
   ): Future[Seq[Country]] = {
-    implicit val profileFormat = jsonFormat6(Country)
 
+    implicit val profileFormat = jsonFormat7(Country)
+    statistic = Map()
     val logger = LoggerFactory.getLogger(getClass.getSimpleName)
-    //https://github.com/spray/spray-json
     val httpClient = Http().outgoingConnection("restcountries.eu")
 
     val response = Source
@@ -50,30 +52,30 @@ class DataGetter()(
     val jsonFraming: Flow[ByteString, ByteString, NotUsed] =
       JsonFraming.objectScanner(Int.MaxValue)
 
-    val resToString: Flow[HttpResponse, ByteString, NotUsed] = {
-      Flow[HttpResponse].flatMapConcat { r =>
-        r.entity.dataBytes
-      }
-    }
-
     val stringToContry: Flow[ByteString, Country, NotUsed] = {
       Flow[ByteString]
         .map(s => {
           s.utf8String.parseJson.convertTo[Country]
         })
-
     }
+
+    val resToString: Flow[HttpResponse, ByteString, NotUsed] = {
+      Flow[HttpResponse].flatMapConcat { r =>
+        r.entity.dataBytes
+      }
+    }
+    val stats = Flow[Country].map(c => {
+      statistic(c.region) = statistic.getOrElse(c.capital, 0) + c.population
+      c
+    })
 
     response
       .via(httpClient)
       .via(resToString)
       .via(jsonFraming)
       .via(stringToContry)
+      .via(stats)
       .runWith(Sink.seq[Country])
   }
-
-  // }.via(countryToSeq)
-  //   .via(csvFormat)
-  //   .runWith(FileIO.toPath(file))
 
 }
